@@ -31,7 +31,7 @@
     "crons": ["5 16 * * *"]
   },
   "vars": {
-    "MY9_SHARE_VIEW_ANALYTICS_DATASET": "my9_share_views_v1"
+    "MY9_SHARE_VIEW_ANALYTICS_DATASET": ""
   },
   "d1_databases": [
     {
@@ -53,7 +53,7 @@
         }
       ],
       "vars": {
-        "MY9_SHARE_VIEW_ANALYTICS_DATASET": "my9_share_views_test_v1"
+        "MY9_SHARE_VIEW_ANALYTICS_DATASET": ""
       },
       "d1_databases": [
         {
