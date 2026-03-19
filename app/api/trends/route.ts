@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import {
   parseTrendKind,
   parseTrendOverallPage,
@@ -28,14 +28,14 @@ function createTrendsCacheHeaders(cdnTtlSeconds: number) {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const period = parseTrendPeriod(searchParams.get("period"));
   const kind = parseTrendKind(searchParams.get("kind"));
   const view = resolveTrendViewByKind(kind, parseTrendView(searchParams.get("view")));
   const overallPage = parseTrendOverallPage(searchParams.get("overallPage"));
   const yearPage = parseTrendYearPage(searchParams.get("yearPage"));
-  const response = await resolveTrendResponse({
+  const response = await resolveTrendResponse(process.env, {
     period,
     view,
     kind,
