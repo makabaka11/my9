@@ -1,0 +1,83 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my9",
+  "main": "worker.js",
+  "compatibility_date": "2026-03-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "my9.shatranj.space",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": ".cf-build/.open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 0.2,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false
+    }
+  },
+  "triggers": {
+    "crons": ["5 16 * * *"]
+  },
+  "vars": {
+    "MY9_SHARE_VIEW_ANALYTICS_DATASET": "my9_share_views_v1"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my9-sql",
+      "database_id": "dc44fa74-5d19-4252-a1c4-4418bd9bdad7",
+      "migrations_dir": "migrations/d1"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "MY9_SHARE_VIEW_ANALYTICS",
+      "dataset": "my9_share_views_v1"
+    }
+  ],
+  "env": {
+    "test": {
+      "routes": [
+        {
+          "pattern": "my9test.shatranj.space",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "MY9_SHARE_VIEW_ANALYTICS_DATASET": "my9_share_views_test_v1"
+      },
+      "d1_databases": [
+        {
+          "binding": "MY9_DB",
+          "database_name": "my9-test",
+          "database_id": "bdaef170-8163-4c9b-a47a-1086c9e1f54f",
+          "migrations_dir": "migrations/d1"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "MY9_SHARE_VIEW_ANALYTICS",
+          "dataset": "my9_share_views_test_v1"
+        }
+      ],
+      "assets": {
+        "directory": ".cf-build/.open-next/assets",
+        "binding": "ASSETS"
+      },
+      "triggers": {
+        "crons": []
+      }
+    }
+  }
+}
