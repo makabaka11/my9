@@ -145,94 +145,23 @@ type GlobalRuntimeWithEnv = typeof globalThis & {
   __MY9_CF_ENV?: LocalPlatformEnv;
 };
 
-let localPlatformPromise: Promise<LocalPlatformEnv | null> | null = null;
-let d1DatabasePromise: Promise<D1DatabaseLike | null> | null = null;
-let d1SchemaReadyPromise: Promise<boolean> | null = null;
-
-async function dynamicRuntimeImport<T = unknown>(specifier: string): Promise<T> {
-  const importer = new Function("s", "return import(s);") as (s: string) => Promise<T>;
-  return importer(specifier);
+export function getD1Database(env: any): D1DatabaseLike | null {
+  const db = env?.DB;
+  return db && typeof db.prepare === "function" ? db : null;
 }
 
-async function getCloudflareBoundD1(): Promise<D1DatabaseLike | null> {
-  const globalEnv = (globalThis as GlobalRuntimeWithEnv).__MY9_CF_ENV;
-  const globalDb = globalEnv?.MY9_DB;
-  if (globalDb && typeof globalDb.prepare === "function") {
-    return globalDb;
-  }
-
+export async function ensureD1Schema(db: D1DatabaseLike): Promise<boolean> {
   try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const context = (await getCloudflareContext({ async: true })) as { env?: LocalPlatformEnv };
-    const db = context?.env?.MY9_DB;
-    return db && typeof db.prepare === "function" ? db : null;
-  } catch {
-    return null;
-  }
-}
-
-async function getLocalPlatformEnv(): Promise<LocalPlatformEnv | null> {
-  if (!localPlatformPromise) {
-    localPlatformPromise = (async () => {
-      try {
-        const { getPlatformProxy } = await dynamicRuntimeImport<typeof import("wrangler")>("wrangler");
-        const environment = readEnv("MY9_DB_WRANGLER_ENV", "NEXT_DEV_WRANGLER_ENV") ?? undefined;
-        const platform = await getPlatformProxy<LocalPlatformEnv>({
-          configPath: path.resolve(process.cwd(), "wrangler.jsonc"),
-          environment,
-          persist: true,
-          remoteBindings: false,
-        });
-        return platform.env ?? null;
-      } catch {
-        return null;
-      }
-    })();
-  }
-  return localPlatformPromise;
-}
-
-export async function getD1Database(): Promise<D1DatabaseLike | null> {
-  if (!d1DatabasePromise) {
-    d1DatabasePromise = (async () => {
-      const bound = await getCloudflareBoundD1();
-      if (bound) return bound;
-
-      const localEnv = await getLocalPlatformEnv();
-      const localDb = localEnv?.MY9_DB;
-      return localDb && typeof localDb.prepare === "function" ? localDb : null;
-    })();
-  }
-  return d1DatabasePromise;
-}
-
-export async function ensureD1Schema(): Promise<boolean> {
-  const db = await getD1Database();
-  if (!db) {
+    await db.exec(D1_SCHEMA_SQL);
+    return true;
+  } catch (e) {
+    console.error("D1 schema error:", e);
     return false;
   }
-
-  if ((globalThis as GlobalRuntimeWithEnv).__MY9_CF_ENV?.MY9_DB) {
-    return true;
-  }
-
-  if (!d1SchemaReadyPromise) {
-    d1SchemaReadyPromise = (async () => {
-      try {
-        await db.exec(D1_SCHEMA_SQL);
-        return true;
-      } catch {
-        d1SchemaReadyPromise = null;
-        return false;
-      }
-    })();
-  }
-
-  return d1SchemaReadyPromise;
 }
 
-export async function isD1RuntimeAvailable(): Promise<boolean> {
-  return (await getD1Database()) !== null;
+export function isD1RuntimeAvailable(env: any): boolean {
+  return getD1Database(env) !== null;
 }
 
 export function buildPlaceholders(count: number): string {

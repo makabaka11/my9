@@ -13,9 +13,9 @@ function createShareCountCacheHeaders() {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request, { env }: { env: any }) {
   try {
-    const totalCount = await countAllShares();
+    const totalCount = await countAllShares(env);
     return NextResponse.json(
       {
         ok: true,

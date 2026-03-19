@@ -261,7 +261,7 @@ export async function runShareViewRollup(options?: {
 
   const nowMs = options?.nowMs ?? Date.now();
   const currentDayStart = getBeijingDayStart(nowMs);
-  const lastCheckpointMs = await getShareViewRollupCheckpoint();
+  const lastCheckpointMs = await getShareViewRollupCheckpoint(options?.env);
   const startMs =
     typeof lastCheckpointMs === "number" && Number.isFinite(lastCheckpointMs)
       ? Math.min(currentDayStart, getBeijingDayStart(lastCheckpointMs))
@@ -269,6 +269,7 @@ export async function runShareViewRollup(options?: {
   const rows = await queryShareViewTotals(config.accountId, config.apiToken, dataset, currentDayStart, startMs);
   const rowsFetched = rows.length;
   const rowsWritten = await upsertShareViewTotalCounts(
+    options?.env,
     rows.map((row) => ({
       shareId: row.shareId,
       kind: row.kind,
@@ -279,7 +280,7 @@ export async function runShareViewRollup(options?: {
       mode: startMs === null ? "replace" : "increment",
     }
   );
-  await setShareViewRollupCheckpoint(currentDayStart);
+  await setShareViewRollupCheckpoint(options?.env, currentDayStart);
 
   const result: ShareViewRollupResult = {
     ok: true,

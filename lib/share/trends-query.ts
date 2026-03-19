@@ -110,23 +110,26 @@ function getInflightMap(): Map<string, Promise<TrendResponse>> {
 }
 
 async function safeGetTrendSampleSummaryCache(
+  env: any,
   period: TrendPeriod,
   kind: SubjectKind,
   allowExpired = false
 ): Promise<TrendSampleSummary | null> {
   try {
-    return await getTrendSampleSummaryCache(period, kind, { allowExpired });
+    return await getTrendSampleSummaryCache(env, period, kind, { allowExpired });
   } catch {
     return null;
   }
 }
 
 async function safeGetTrendsCache(
+  env: any,
   params: ResolveTrendParams,
   allowExpired = false
 ): Promise<TrendResponse | null> {
   try {
     return await getTrendsCache(
+      env,
       params.period,
       params.view,
       params.kind,
@@ -140,20 +143,22 @@ async function safeGetTrendsCache(
 }
 
 async function safeSetTrendSampleSummaryCache(
+  env: any,
   period: TrendPeriod,
   kind: SubjectKind,
   value: TrendSampleSummary
 ): Promise<void> {
   try {
-    await setTrendSampleSummaryCache(period, kind, value, TRENDS_STORE_CACHE_TTL_SECONDS);
+    await setTrendSampleSummaryCache(env, period, kind, value, TRENDS_STORE_CACHE_TTL_SECONDS);
   } catch {
     // Intentionally swallow cache write errors.
   }
 }
 
-async function safeSetTrendsCache(params: ResolveTrendParams, value: TrendResponse): Promise<void> {
+async function safeSetTrendsCache(env: any, params: ResolveTrendParams, value: TrendResponse): Promise<void> {
   try {
     await setTrendsCache(
+      env,
       params.period,
       params.view,
       params.kind,
@@ -167,9 +172,9 @@ async function safeSetTrendsCache(params: ResolveTrendParams, value: TrendRespon
   }
 }
 
-async function safeGetTrendSampleSummary(period: TrendPeriod, kind: SubjectKind): Promise<TrendSampleSummary | null> {
+async function safeGetTrendSampleSummary(env: any, period: TrendPeriod, kind: SubjectKind): Promise<TrendSampleSummary | null> {
   try {
-    return await getTrendSampleSummary(period, kind);
+    return await getTrendSampleSummary(env, period, kind);
   } catch {
     return null;
   }
@@ -219,11 +224,11 @@ export function parseTrendYearPage(value: string | null | undefined): TrendYearP
   return value === "legacy" ? "legacy" : DEFAULT_TREND_YEAR_PAGE;
 }
 
-async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise<TrendResponse> {
+async function resolveTrendResponseInternal(env: any, params: ResolveTrendParams): Promise<TrendResponse> {
   const { period, kind } = params;
-  let sampleSummary = await safeGetTrendSampleSummaryCache(period, kind, false);
+  let sampleSummary = await safeGetTrendSampleSummaryCache(env, period, kind, false);
 
-  const cached = await safeGetTrendsCache(params, false);
+  const cached = await safeGetTrendsCache(env, params, false);
   if (cached) {
     let mergedSampleCount = sampleSummary ? Math.max(sampleSummary.sampleCount, cached.sampleCount) : cached.sampleCount;
     let shouldBypassCached = false;
@@ -231,12 +236,12 @@ async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise
     // `today` is vulnerable to low-sample seed cache after midnight.
     // If cached payload is empty and sample < 30, probe live summary once.
     if (period === "today" && cached.items.length === 0 && mergedSampleCount < 30) {
-      const liveSummary = await safeGetTrendSampleSummary(period, kind);
+      const liveSummary = await safeGetTrendSampleSummary(env, period, kind);
       if (liveSummary) {
         mergedSampleCount = Math.max(mergedSampleCount, liveSummary.sampleCount);
         if (!isSameSampleSummary(sampleSummary, liveSummary)) {
           sampleSummary = liveSummary;
-          await safeSetTrendSampleSummaryCache(period, kind, liveSummary);
+          await safeSetTrendSampleSummaryCache(env, period, kind, liveSummary);
         } else {
           sampleSummary = liveSummary;
         }
@@ -253,23 +258,23 @@ async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise
         const cachedLooksSuppressedSmallSample = cached.items.length === 0 && cached.sampleCount > 0 && cached.sampleCount < 30;
         if (!cachedLooksSuppressedSmallSample) {
           sampleSummary = toSampleSummary(cached);
-          await safeSetTrendSampleSummaryCache(period, kind, sampleSummary);
+          await safeSetTrendSampleSummaryCache(env, period, kind, sampleSummary);
         }
       }
       return suppressSmallSamples(applySampleSummary(cached, sampleSummary));
     }
 
     if (!sampleSummary) {
-      sampleSummary = await safeGetTrendSampleSummary(period, kind);
+      sampleSummary = await safeGetTrendSampleSummary(env, period, kind);
     }
     if (!sampleSummary) {
       sampleSummary = toSampleSummary(cached);
-      await safeSetTrendSampleSummaryCache(period, kind, sampleSummary);
+      await safeSetTrendSampleSummaryCache(env, period, kind, sampleSummary);
     }
   }
 
   try {
-    const aggregated = await getAggregatedTrendResponse({
+    const aggregated = await getAggregatedTrendResponse(env, {
       period: params.period,
       view: params.view,
       kind: params.kind,
@@ -279,9 +284,9 @@ async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise
 
     if (aggregated) {
       sampleSummary = toSampleSummary(aggregated);
-      await safeSetTrendSampleSummaryCache(period, kind, sampleSummary);
+      await safeSetTrendSampleSummaryCache(env, period, kind, sampleSummary);
       const normalized = suppressSmallSamples(aggregated);
-      await safeSetTrendsCache(params, normalized);
+      await safeSetTrendsCache(env, params, normalized);
       return normalized;
     }
   } catch (error) {
@@ -295,16 +300,16 @@ async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise
     });
   }
 
-  const staleCached = await safeGetTrendsCache(params, true);
+  const staleCached = await safeGetTrendsCache(env, params, true);
   if (staleCached) {
     if (!sampleSummary) {
-      sampleSummary = (await safeGetTrendSampleSummaryCache(period, kind, true)) ?? toSampleSummary(staleCached);
+      sampleSummary = (await safeGetTrendSampleSummaryCache(env, period, kind, true)) ?? toSampleSummary(staleCached);
     }
     return suppressSmallSamples(applySampleSummary(staleCached, sampleSummary));
   }
 
   if (!sampleSummary) {
-    sampleSummary = (await safeGetTrendSampleSummary(period, kind)) ?? {
+    sampleSummary = (await safeGetTrendSampleSummary(env, period, kind)) ?? {
       sampleCount: 0,
       range: { from: null, to: null },
     };
@@ -313,7 +318,7 @@ async function resolveTrendResponseInternal(params: ResolveTrendParams): Promise
   return suppressSmallSamples(createEmptyTrendResponse(params, sampleSummary));
 }
 
-export async function resolveTrendResponse(params: ResolveTrendParams): Promise<TrendResponse> {
+export async function resolveTrendResponse(env: any, params: ResolveTrendParams): Promise<TrendResponse> {
   const key = resolveInflightKey(params);
   const inflight = getInflightMap();
   const existing = inflight.get(key);
@@ -321,7 +326,7 @@ export async function resolveTrendResponse(params: ResolveTrendParams): Promise<
     return existing;
   }
 
-  const pending = resolveTrendResponseInternal(params).finally(() => {
+  const pending = resolveTrendResponseInternal(env, params).finally(() => {
     inflight.delete(key);
   });
   inflight.set(key, pending);

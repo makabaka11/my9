@@ -2,62 +2,65 @@ import type { TrendPeriod, TrendResponse, TrendView, TrendYearPage, StoredShareV
 import type { SubjectKind } from "@/lib/subject-kind";
 import d1StorageBackend from "@/lib/share/storage-d1";
 
-export function saveShare(record: StoredShareV1) {
-  return d1StorageBackend.saveShare(record);
+export function saveShare(env: any, record: StoredShareV1) {
+  return d1StorageBackend.saveShare(env, record);
 }
 
-export function getShare(shareId: string) {
-  return d1StorageBackend.getShare(shareId);
+export function getShare(env: any, shareId: string) {
+  return d1StorageBackend.getShare(env, shareId);
 }
 
-export function touchShare(shareId: string, now = Date.now()) {
-  return d1StorageBackend.touchShare(shareId, now);
+export function touchShare(env: any, shareId: string, now = Date.now()) {
+  return d1StorageBackend.touchShare(env, shareId, now);
 }
 
-export function listAllShares() {
-  return d1StorageBackend.listAllShares();
+export function listAllShares(env: any) {
+  return d1StorageBackend.listAllShares(env);
 }
 
-export function countAllShares() {
-  return d1StorageBackend.countAllShares();
+export function countAllShares(env: any) {
+  return d1StorageBackend.countAllShares(env);
 }
 
-export function listSharesByPeriod(period: TrendPeriod) {
-  return d1StorageBackend.listSharesByPeriod(period);
+export function listSharesByPeriod(env: any, period: TrendPeriod) {
+  return d1StorageBackend.listSharesByPeriod(env, period);
 }
 
-export function getAggregatedTrendResponse(params: {
+export function getAggregatedTrendResponse(env: any, params: {
   period: TrendPeriod;
   view: TrendView;
   kind: SubjectKind;
   overallPage: number;
   yearPage: TrendYearPage;
 }): Promise<TrendResponse | null> {
-  return d1StorageBackend.getAggregatedTrendResponse(params);
+  return d1StorageBackend.getAggregatedTrendResponse(env, params);
 }
 
-export function getTrendSampleSummary(period: TrendPeriod, kind: SubjectKind) {
-  return d1StorageBackend.getTrendSampleSummary(period, kind);
+export function getTrendSampleSummary(env: any, period: TrendPeriod, kind: SubjectKind) {
+  return d1StorageBackend.getTrendSampleSummary(env, period, kind);
 }
 
 export function getTrendSampleSummaryCache(
+  env: any,
   period: TrendPeriod,
   kind: SubjectKind,
   options?: { allowExpired?: boolean }
 ) {
-  return d1StorageBackend.getTrendSampleSummaryCache(period, kind, options);
+  return d1StorageBackend.getTrendSampleSummaryCache(env, period, kind, options);
 }
 
 export function setTrendSampleSummaryCache(
+  env: any,
   period: TrendPeriod,
   kind: SubjectKind,
   value: { sampleCount: number; range: { from: number | null; to: number | null } },
   ttlSeconds = 3600
 ) {
-  return d1StorageBackend.setTrendSampleSummaryCache(period, kind, value, ttlSeconds);
+  return d1StorageBackend.setTrendSampleSummaryCache(env, period, kind, value, ttlSeconds);
 }
 
 export function getTrendsCache(
+  env: any,
   period: TrendPeriod,
   view: TrendView,
   kind: SubjectKind,
@@ -65,10 +68,11 @@ export function getTrendsCache(
   yearPage: TrendYearPage,
   options?: { allowExpired?: boolean }
 ) {
-  return d1StorageBackend.getTrendsCache(period, view, kind, overallPage, yearPage, options);
+  return d1StorageBackend.getTrendsCache(env, period, view, kind, overallPage, yearPage, options);
 }
 
 export function setTrendsCache(
+  env: any,
   period: TrendPeriod,
   view: TrendView,
   kind: SubjectKind,
@@ -77,18 +81,19 @@ export function setTrendsCache(
   value: TrendResponse,
   ttlSeconds = 3600
 ) {
-  return d1StorageBackend.setTrendsCache(period, view, kind, overallPage, yearPage, value, ttlSeconds);
+  return d1StorageBackend.setTrendsCache(env, period, view, kind, overallPage, yearPage, value, ttlSeconds);
 }
 
-export function getShareViewRollupCheckpoint() {
-  return d1StorageBackend.getShareViewRollupCheckpoint();
+export function getShareViewRollupCheckpoint(env: any) {
+  return d1StorageBackend.getShareViewRollupCheckpoint(env);
 }
 
-export function setShareViewRollupCheckpoint(checkpointMs: number) {
-  return d1StorageBackend.setShareViewRollupCheckpoint(checkpointMs);
+export function setShareViewRollupCheckpoint(env: any, checkpointMs: number) {
+  return d1StorageBackend.setShareViewRollupCheckpoint(env, checkpointMs);
 }
 
 export function upsertShareViewTotalCounts(
+  env: any,
   rows: Array<{
     shareId: string;
     kind: SubjectKind;
@@ -96,9 +101,9 @@ export function upsertShareViewTotalCounts(
   }>,
   options?: { lastAggregatedAt?: number; mode?: "replace" | "increment" }
 ) {
-  return d1StorageBackend.upsertShareViewTotalCounts(rows, options);
+  return d1StorageBackend.upsertShareViewTotalCounts(env, rows, options);
 }
 
-export function cleanupOldTrendCounts(params?: { cleanupTrendDays?: number }) {
-  return d1StorageBackend.cleanupOldTrendCounts(params);
+export function cleanupOldTrendCounts(env: any, params?: { cleanupTrendDays?: number }) {
+  return d1StorageBackend.cleanupOldTrendCounts(env, params);
 }

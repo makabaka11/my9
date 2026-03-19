@@ -593,7 +593,7 @@ async function loadTemporalTrendBuckets(
 const d1StorageBackend: StorageBackend = {
   name: "d1",
 
-  async saveShare(record) {
+  async saveShare(env, record) {
     const normalizedRecord = normalizeStoredShare(record);
     const { payload, subjectSnapshots } = toCompactSharePayload(normalizedRecord.games);
     const contentHash = createContentHash({
@@ -602,9 +602,15 @@ const d1StorageBackend: StorageBackend = {
       payload,
     });
 
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("saveShare failed: d1 is not ready");
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const existingShareId = await resolveExistingShareIdByHash(db, contentHash);
@@ -738,10 +744,16 @@ const d1StorageBackend: StorageBackend = {
     }
   },
 
-  async getShare(shareId) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("getShare failed: d1 is not ready");
+  async getShare(env, shareId) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const row = await queryFirst<ShareRegistryRow>(
@@ -790,10 +802,16 @@ const d1StorageBackend: StorageBackend = {
     return inflated ? { ...inflated, shareId } : null;
   },
 
-  async touchShare(shareId, now = Date.now()) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("touchShare failed: d1 is not ready");
+  async touchShare(env, shareId, now = Date.now()) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const aliasRow = await queryFirst<{ target_share_id: string }>(
@@ -820,10 +838,16 @@ const d1StorageBackend: StorageBackend = {
     );
   },
 
-  async listAllShares() {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("listAllShares failed: d1 is not ready");
+  async listAllShares(env) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const rows = await queryAll<ShareRegistryRow>(
@@ -843,11 +867,18 @@ const d1StorageBackend: StorageBackend = {
     return result;
   },
 
-  async countAllShares() {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("countAllShares failed: d1 is not ready");
+  async countAllShares(env) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
     }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
+    }
+
     const row = await queryFirst<ShareCountRow>(
       db,
       `
@@ -858,10 +889,16 @@ const d1StorageBackend: StorageBackend = {
     return toNumber(row?.total_count, 0);
   },
 
-  async listSharesByPeriod(period) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("listSharesByPeriod failed: d1 is not ready");
+  async listSharesByPeriod(env, period) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const from = getPeriodStart(period);
@@ -894,9 +931,15 @@ const d1StorageBackend: StorageBackend = {
     return result;
   },
 
-  async getAggregatedTrendResponse(params) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
+  async getAggregatedTrendResponse(env, params) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      return null;
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
       return null;
     }
 
@@ -950,9 +993,15 @@ const d1StorageBackend: StorageBackend = {
     };
   },
 
-  async getTrendSampleSummary(period, kind) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
+  async getTrendSampleSummary(env, period, kind) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      return null;
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
       return null;
     }
 
@@ -983,10 +1032,16 @@ const d1StorageBackend: StorageBackend = {
     };
   },
 
-  async getTrendSampleSummaryCache(period, kind, options) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("getTrendSampleSummaryCache failed: d1 is not ready");
+  async getTrendSampleSummaryCache(env, period, kind, options) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const key = trendSampleCacheKey(period, kind);
@@ -1021,10 +1076,16 @@ const d1StorageBackend: StorageBackend = {
     return parseTrendSampleSummaryPayload(row.payload);
   },
 
-  async setTrendSampleSummaryCache(period, kind, value, ttlSeconds = 3600) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("setTrendSampleSummaryCache failed: d1 is not ready");
+  async setTrendSampleSummaryCache(env, period, kind, value, ttlSeconds = 3600) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const key = trendSampleCacheKey(period, kind);
@@ -1048,10 +1109,16 @@ const d1StorageBackend: StorageBackend = {
     );
   },
 
-  async getTrendsCache(period, view, kind, overallPage, yearPage, options) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("getTrendsCache failed: d1 is not ready");
+  async getTrendsCache(env, period, view, kind, overallPage, yearPage, options) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const key = trendCacheKey(period, view, kind, overallPage, yearPage);
@@ -1086,10 +1153,16 @@ const d1StorageBackend: StorageBackend = {
     return parseTrendPayload(row.payload);
   },
 
-  async setTrendsCache(period, view, kind, overallPage, yearPage, value, ttlSeconds = 3600) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("setTrendsCache failed: d1 is not ready");
+  async setTrendsCache(env, period, view, kind, overallPage, yearPage, value, ttlSeconds = 3600) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const updatedAt = Date.now();
@@ -1112,10 +1185,16 @@ const d1StorageBackend: StorageBackend = {
     );
   },
 
-  async getShareViewRollupCheckpoint() {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("getShareViewRollupCheckpoint failed: d1 is not ready");
+  async getShareViewRollupCheckpoint(env) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const checkpointRow = await queryFirst<ShareViewRollupCheckpointRow>(
@@ -1144,10 +1223,16 @@ const d1StorageBackend: StorageBackend = {
     return toOptionalNumber(fallbackRow?.last_aggregated_at);
   },
 
-  async setShareViewRollupCheckpoint(checkpointMs) {
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("setShareViewRollupCheckpoint failed: d1 is not ready");
+  async setShareViewRollupCheckpoint(env, checkpointMs) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const updatedAt = Date.now();
@@ -1178,7 +1263,7 @@ const d1StorageBackend: StorageBackend = {
     );
   },
 
-  async upsertShareViewTotalCounts(rows, options) {
+  async upsertShareViewTotalCounts(env, rows, options) {
     const normalizedRows = rows
       .map((row) => ({
         shareId: typeof row.shareId === "string" ? row.shareId.trim().toLowerCase() : "",
@@ -1195,9 +1280,15 @@ const d1StorageBackend: StorageBackend = {
       return 0;
     }
 
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
-      throw new Error("upsertShareViewTotalCounts failed: d1 is not ready");
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      throw new Error("D1 not available");
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
+      throw new Error("D1 schema init failed");
     }
 
     const lastAggregatedAt = Number.isFinite(options?.lastAggregatedAt)
@@ -1285,13 +1376,24 @@ const d1StorageBackend: StorageBackend = {
     return finalRows.size;
   },
 
-  async cleanupOldTrendCounts(params) {
+  async cleanupOldTrendCounts(env, params) {
     const cleanupTrendDays = Math.max(
       180,
       params?.cleanupTrendDays ?? parsePositiveInt(readEnv("MY9_TREND_CLEANUP_DAYS"), 190)
     );
-    const db = await getD1Database();
-    if (!db || !(await ensureD1Schema())) {
+    const db = getD1Database(env);
+    if (!db) {
+      console.error("D1 missing from env");
+      return {
+        cleanupTrendDays,
+        cleanedTrendRows: 0,
+        cleanedDayRows: 0,
+        cleanedHourRows: 0,
+      };
+    }
+
+    const schemaOk = await ensureD1Schema(db);
+    if (!schemaOk) {
       return {
         cleanupTrendDays,
         cleanedTrendRows: 0,

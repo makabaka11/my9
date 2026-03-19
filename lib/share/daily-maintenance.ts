@@ -16,7 +16,7 @@ export async function runDailyShareMaintenance(options?: {
   const failures: string[] = [];
 
   try {
-    result.trendCleanup = await cleanupOldTrendCounts();
+    result.trendCleanup = await cleanupOldTrendCounts(options?.env);
   } catch (error) {
     failures.push(`trendCleanup=${error instanceof Error ? error.message : String(error)}`);
   }

@@ -104,7 +104,7 @@ function parseGames(input: unknown): Array<ShareGame | null> | null {
   return input.map((item) => sanitizeGame(item));
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request, { env }: { env: any }) {
   try {
     const body = await request.json();
     const kind = parseSubjectKind(body?.kind);
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
       lastViewedAt: now,
     };
 
-    const saveResult = await saveShare(record);
+    const saveResult = await saveShare(env, record);
     const finalShareId = saveResult.shareId;
     const origin = new URL(request.url).origin;
     const shareUrl = `${origin}/${kind}/s/${finalShareId}`;
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request, { env }: { env: any }) {
   const { searchParams } = new URL(request.url);
   const id = normalizeShareId(searchParams.get("id"));
   if (!id) {
@@ -182,7 +182,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const share = await getShare(id);
+  const share = await getShare(env, id);
   if (!share) {
     return NextResponse.json(
       {
