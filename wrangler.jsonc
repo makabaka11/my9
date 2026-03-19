@@ -33,12 +33,19 @@
   "vars": {
     "MY9_SHARE_VIEW_ANALYTICS_DATASET": ""
   },
+  "analytics_engine_datasets": [
+  {
+    "binding": "MY9_SHARE_VIEW_ANALYTICS",
+    "dataset": "my9_share_views_v1"
+  }
+],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "my9-sql",
       "database_id": "dc44fa74-5d19-4252-a1c4-4418bd9bdad7",
-      "migrations_dir": "migrations/d1"
+      "migrations_dir": "migrations/d1",
+      "persist": true
     }
   ],
   "env": {
@@ -52,12 +59,19 @@
       "vars": {
         "MY9_SHARE_VIEW_ANALYTICS_DATASET": ""
       },
+      "analytics_engine_datasets": [
+        {
+          "binding": "MY9_SHARE_VIEW_ANALYTICS",
+          "dataset": "my9_share_views_v1"
+        }
+      ],
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "my9-sql",
           "database_id": "dc44fa74-5d19-4252-a1c4-4418bd9bdad7",
-          "migrations_dir": "migrations/d1"
+          "migrations_dir": "migrations/d1",
+          "persist": true
         }
       ],
       "assets": {
