@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { countAllShares } from "@/lib/share/storage";
 import { SHARE_COUNT_SNAPSHOT } from "@/lib/generated/share-count-snapshot";
 
@@ -13,9 +13,9 @@ function createShareCountCacheHeaders() {
   };
 }
 
-export async function GET(request: Request, { env }: { env: any }) {
+export async function GET(request: NextRequest) {
   try {
-    const totalCount = await countAllShares(env);
+    const totalCount = await countAllShares(process.env);
     return NextResponse.json(
       {
         ok: true,

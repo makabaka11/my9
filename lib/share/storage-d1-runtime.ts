@@ -146,7 +146,7 @@ type GlobalRuntimeWithEnv = typeof globalThis & {
 };
 
 export function getD1Database(env: any): D1DatabaseLike | null {
-  const db = env?.DB;
+  const db = env?.DB || process.env?.DB;
   return db && typeof db.prepare === "function" ? db : null;
 }
 

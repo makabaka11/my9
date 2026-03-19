@@ -46,7 +46,7 @@ export default async function ShareReadonlyPage({
   let initialShareData: InitialReadonlyShareData | null = null;
 
   try {
-    const share = await getShare(shareId);
+    const share = await getShare(process.env, shareId);
     if (share) {
       const shareKind = parseSubjectKind(share.kind) ?? kind;
       if (shareKind !== kind) {

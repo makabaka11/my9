@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createShareId, normalizeShareId } from "@/lib/share/id";
 import { saveShare, getShare } from "@/lib/share/storage";
 import { ShareGame, StoredShareV1 } from "@/lib/share/types";
@@ -104,7 +104,7 @@ function parseGames(input: unknown): Array<ShareGame | null> | null {
   return input.map((item) => sanitizeGame(item));
 }
 
-export async function POST(request: Request, { env }: { env: any }) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const kind = parseSubjectKind(body?.kind);
@@ -146,7 +146,7 @@ export async function POST(request: Request, { env }: { env: any }) {
       lastViewedAt: now,
     };
 
-    const saveResult = await saveShare(env, record);
+    const saveResult = await saveShare(process.env, record);
     const finalShareId = saveResult.shareId;
     const origin = new URL(request.url).origin;
     const shareUrl = `${origin}/${kind}/s/${finalShareId}`;
@@ -169,7 +169,7 @@ export async function POST(request: Request, { env }: { env: any }) {
   }
 }
 
-export async function GET(request: Request, { env }: { env: any }) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = normalizeShareId(searchParams.get("id"));
   if (!id) {
@@ -182,7 +182,7 @@ export async function GET(request: Request, { env }: { env: any }) {
     );
   }
 
-  const share = await getShare(env, id);
+  const share = await getShare(process.env, id);
   if (!share) {
     return NextResponse.json(
       {
