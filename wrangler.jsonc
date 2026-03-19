@@ -8,10 +8,11 @@
   "preview_urls": true,
   "routes": [
     {
-      "pattern": "my9.shatranj.space",
-      "custom_domain": true
+      "pattern": "my9.retr0.xyz",
+      "zone_name": "retr0.xyz"
     }
   ],
+  "domains": ["my9.retr0.xyz"],
   "assets": {
     "directory": ".cf-build/.open-next/assets",
     "binding": "ASSETS"
